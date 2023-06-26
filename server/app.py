@@ -9,6 +9,7 @@ from models import db, Plant
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///plants.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.json.compact = False
 
 migrate = Migrate(app, db)
@@ -21,6 +22,36 @@ class Plants(Resource):
     def get(self):
         plants = [plant.to_dict() for plant in Plant.query.all()]
         return make_response(jsonify(plants), 200)
+
+    def patch(self, id):
+        record = Plant().query.filter_by(id = id).first()
+        for attr in request.form:
+            setatrr(record, attr,request.form[attr])
+
+            db.session.add(record)
+            db.session.commit()
+
+            response_dict =record.to_dict()
+            response = make_response(
+                jsonify(response_dict),
+                200
+            )
+
+            return response
+
+    def delete(self, id):
+        record = Plant().query.filter_by(id=id).first()
+
+        db.session.delete(record)
+        db.sesson.commit()
+
+        # response_dict = {"message": "record deleted successfully"}
+        response = make_response(
+            jsonify(record.to_dict),
+            200
+        )
+
+        return response
 
     def post(self):
 
@@ -46,7 +77,8 @@ class PlantByID(Resource):
         return make_response(jsonify(plant), 200)
 
 api.add_resource(PlantByID, '/plants/<int:id>')
-        
+
+       
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
